@@ -4,13 +4,17 @@ task wrapper(type: Wrapper) {
 
 buildscript {
     repositories {
-        mavenCentral()
+        mavenLocal()
+        //mavenCentral()
     }
+
     dependencies {
         classpath 'com.github.kulya:jmeter-gradle-plugin:1.3.2-2.6'
     }
 }
+
 apply plugin:'jmeter'
+
 def performanceTestReportDir = file("$buildDir/reports/tests")
 jmeterRun.configure {
     jmeterTestFiles = [ file("$rootDir/web/src/test-performance/resources/jmeter/performanceTestPlan.jmx")]
@@ -40,19 +44,22 @@ project(':web') {
 	        layout 'pattern', {
 	         artifact '[revision]/[module](.[classifier]).[ext]'
 	      }
-	   }
+	   	}
 
-		maven {
+	   	mavenLocal()
+
+		/*maven {
 			url binaryRepositoryMavenLocalUrl
 			credentials {
 				username = binaryRepositoryUserName
 				password = binaryRepositoryPassword
 			}
 		}
-	mavenCentral()
+
+		mavenCentral()
 	    jcenter()
-		
-		maven { url "http://repo.maven.apache.org/maven2" }
+			
+		maven { url "http://repo.maven.apache.org/maven2" }*/
 	}
 
 	configurations {
@@ -66,6 +73,7 @@ project(':web') {
 	    angular group: 'angular', name: 'angular', version: '1.2.9', ext: 'js'
 
 	    compile 'org.seleniumhq.selenium:selenium-java:2.46.0'
+
         compile 'org.testng:testng:6.8'
 
     }
@@ -94,9 +102,9 @@ project(':web') {
     task fetch(type: Copy) {
 	 from configurations.angular
 		into 'src/main/webapp/assets/js/plugins'
-		   rename {
+	   	rename {
 	     'angular.js'
-	  }
+	  	}
 	}
 
 
@@ -135,7 +143,8 @@ project(':web') {
 		toolVersion = '2.9.1'
 		ignoreFailures = true
 	}
-sonarRunner {
+
+	sonarRunner {
 	    sonarProperties {
 			property "sonar.host.url", sonarHostUrl
 			property "sonar.jdbc.url", sonarJdbcUrl
@@ -155,9 +164,9 @@ sonarRunner {
 
 	
 	task myZip(type: Zip) {
-from "$buildDir/reports/tests/"
- 
-}
+		from "$buildDir/reports/tests/"
+	 
+	}
 	publishing {
 		publications {
 			webApp(MavenPublication) {
@@ -167,30 +176,32 @@ from "$buildDir/reports/tests/"
 			
 				from components.web
 			}
+
 			functionalReports(MavenPublication){
-					groupId mavenGroupId
-					artifactId "FunctionalReports"
-					version version
-					artifact(myZip) {
-			       classifier "reports"
-			       }
-			       }
-			 performanceReports(MavenPublication){
-			        groupId mavenGroupId
-					artifactId "PerformanceReports"
-					version version
-					artifact(myZip) {
-			       classifier "reports"
-			       }
-			       }
+				groupId mavenGroupId
+				artifactId "FunctionalReports"
+				version version
+				artifact(myZip) {
+		       		classifier "reports"
+		       	}
+	       	}
+
+		 	performanceReports(MavenPublication){
+		        groupId mavenGroupId
+				artifactId "PerformanceReports"
+				version version
+				artifact(myZip) {
+		       		classifier "reports"
+		       	}
+      	 	}
 			
 		}
 		repositories {
 			maven {
-				url binaryRepositoryReleasesUrl
+				url releasesRepoPath
 				credentials {
-					username = binaryRepositoryUserName
-					password = binaryRepositoryPassword
+					username = repoUserName
+					password = repoPassword
 				}
 			}
 		}
@@ -198,12 +209,14 @@ from "$buildDir/reports/tests/"
 	
 	repositories {
 		maven {
-			url binaryRepositoryReleasesUrl 
+			url releasesRepoPath 
 		}
 	}
+
 	configurations {
 		downloadWar
 	}
+
 	println "$mavenGroupId:$appName:$project.version@war"
 	dependencies {		
 		downloadWar ("$mavenGroupId:$appName:$project.version@war"){ 
@@ -212,7 +225,7 @@ from "$buildDir/reports/tests/"
 				extension = 'war'
 				type = 'war'
 			}
-    		}
+		}
 	}
 
 	task downloadBinaryArchive(type: Copy) {		
@@ -227,12 +240,12 @@ from "$buildDir/reports/tests/"
 	    deployable {
 	    	def fileName = appName+"-"+version
 	    	def filePath = "$buildDir/libs/$fileName"+".war"
-		file = new File ("$buildDir/libs/$fileName"+".war")
-		context = appName
+			file = new File ("$buildDir/libs/$fileName"+".war")
+			context = appName
 	    }
 
 	    local {
-		homeDir = file(config.server.localHomeDir)
+			homeDir = file(config.server.localHomeDir)
 	    }
 	}
 
@@ -260,9 +273,8 @@ from "$buildDir/reports/tests/"
 		classpath = sourceSets.functionalTest.runtimeClasspath
 		systemProperty 'url', "$config.server.hostname:$config.server.port/$appName/"
 		useTestNG(){
-        suites 'src/test-functional/resources/testing.xml'
-    }
-
+	        suites 'src/test-functional/resources/testing.xml'
+	    }
 	}
 }
 
